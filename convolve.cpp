@@ -248,21 +248,23 @@ void fft(ComplexArray& x) {
     const size_t n = x.size();
     if (n <= 1) return;
 
+    int n_over_2 = int(n / 2);
+
     // divide
-    ComplexArray even = x[slice(0, n / 2, 2)];
-    ComplexArray odd = x[slice(1, n / 2, 2)];
+    ComplexArray even = x[slice(0, n_over_2, 2)];
+    ComplexArray odd = x[slice(1, n_over_2, 2)];
 
     // conquer
     fft(even);
     fft(odd);
 
     // combine
-    for (size_t k = 0; k < n / 2; ++k) {
+    for (size_t k = 0; k < n_over_2; ++k) {
         Complex t = polar(1.0, -2 * PI * k / n) * odd[k];
         Complex even_k = even[k];
         
         x[k] = even_k + t;
-        x[k + n / 2] = even_k - t;
+        x[k + n_over_2] = even_k - t;
     }
 }
 

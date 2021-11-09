@@ -16,6 +16,7 @@
         "istream": "cpp",
         "limits": "cpp",
         "sstream": "cpp",
-        "streambuf": "cpp"
+        "streambuf": "cpp",
+        "valarray": "cpp"
     }
 }
