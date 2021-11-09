@@ -300,49 +300,53 @@ WaveFile convolution(WaveFile input, WaveFile IR) {
     // New subchunk2 size
     int outputSample = input.numberOfSample + IR.numberOfSample - 1; // m + n - 1
     output.numberOfSample = outputSample;
-    output.subchunck2Size = outputSample * BYTES_PER_SAMPLE;
+    output.subchunck2Size = outputSample * BYTES_PER_SAMPLE * output.channels;
 
     // New subchunk2 array data
     int outputArraySize = outputSample * output.channels;
     output.arraySize = outputArraySize;
     output.array = new double[outputArraySize];
 
-    int complexArraySize = upper_power_of_two(outputArraySize);
-    cout << "complex array size: " << complexArraySize << endl;
-
+    int complexArraySize = upper_power_of_two(outputSample);
+    cout << "complex array per channel size: " << complexArraySize << endl;
+    
     ComplexArray inputComplexArray;
     ComplexArray IRComplexArray;
-    inputComplexArray.resize(complexArraySize, 0);
-    IRComplexArray.resize(complexArraySize, 0);
-
-    for (int t = 0; t < input.arraySize; t++) {
-        inputComplexArray[t] = input.array[t];
-    }
-
-    for (int t = 0; t < IR.arraySize; t++) {
-        IRComplexArray[t] = IR.array[t];
-    }
-
-    cout << "complex arrays build" << endl;
-
-    fft(inputComplexArray);
-    fft(IRComplexArray);
-    cout << "complex arrays fft" << endl;
-
     ComplexArray outputComplexArray;
-    outputComplexArray.resize(complexArraySize, 0);
+    
+    cout << "complex arrays build" << endl;
+    // For each channel, FFT the input and output and multiply, and copy to output
+    for (int r = 0; r < output.channels; r++) {
+        cout << "IR complex array channel #" << r << endl;
 
-    cout << "complex arrays multiply start" << endl;
-    outputComplexArray = inputComplexArray * IRComplexArray;
-    cout << "complex arrays multiply end" << endl;
+        inputComplexArray.resize(complexArraySize, 0);
+        IRComplexArray.resize(complexArraySize, 0);
+        outputComplexArray.resize(complexArraySize, 0);
 
-    ifft(outputComplexArray);
-    cout << "output complex array ifft" << endl;
+        // FFT input
+        for (int t = 0; t < input.arraySize; t++) {
+            inputComplexArray[t] = input.array[t];
+        }
+        fft(inputComplexArray);
+        
+        // FFT IR
+        for (int t = 0; t < IR.numberOfSample; t++) {
+            IRComplexArray[t] = IR.array[t * output.channels + r];
+        }
+        fft(IRComplexArray);
 
-    for (int t = 0; t < outputArraySize; t++) {
-        output.array[t] = outputComplexArray[t].real();
+        // Multiplication
+        outputComplexArray = inputComplexArray * IRComplexArray;
+        ifft(outputComplexArray);
+        cout << "output complex array ifft" << endl;
+
+        // Copy real to output intertwined
+        for (int t = 0; t < outputSample; t++) {
+            output.array[t * output.channels + r] = outputComplexArray[t].real();
+        }
+        cout << "output complex array to real" << endl << endl;
     }
-    cout << "output complex array to real" << endl;
+    cout << "complex arrays fft" << endl;
 
     return output;
 }
