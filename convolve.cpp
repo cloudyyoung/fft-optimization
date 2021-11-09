@@ -259,8 +259,10 @@ void fft(ComplexArray& x) {
     // combine
     for (size_t k = 0; k < n / 2; ++k) {
         Complex t = polar(1.0, -2 * PI * k / n) * odd[k];
-        x[k] = even[k] + t;
-        x[k + n / 2] = even[k] - t;
+        Complex even_k = even[k];
+        
+        x[k] = even_k + t;
+        x[k + n / 2] = even_k - t;
     }
 }
 
