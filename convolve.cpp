@@ -13,6 +13,7 @@
 
 // Constants
 #define PI              	3.14159265358979
+#define NEG_DOUBLE_PI       -2 * PI
 #define TONE_FREQUENCY		440 // Frequency of tone to be created (A = 440 Hz)
 #define SAMPLE_RATE     	44100.0 //  Standard sample rate in Hz
 #define BITS_PER_SAMPLE		16 //  Standard sample size in bits
@@ -260,7 +261,7 @@ void fft(ComplexArray& x) {
 
     // combine
     for (size_t k = 0; k < n_over_2; ++k) {
-        Complex t = polar(1.0, -2 * PI * k / n) * odd[k];
+        Complex t = polar(1.0, NEG_DOUBLE_PI * k / n) * odd[k];
         Complex even_k = even[k];
         
         x[k] = even_k + t;
