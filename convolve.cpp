@@ -8,6 +8,8 @@
 #include <fstream>
 #include <cstring>
 #include <string>
+#include <complex>
+#include <valarray>
 
 // Constants
 #define PI              	3.14159265358979
@@ -22,6 +24,8 @@
 
 using namespace std;
 
+typedef complex<double> Complex;
+typedef valarray<Complex> ComplexArray;
 
 class WaveFile {
 public:
@@ -227,6 +231,58 @@ private:
     }
 };
 
+// https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
+unsigned long upper_power_of_two(unsigned long v) {
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return v;
+}
+
+// Cooley–Tukey FFT (in-place, divide-and-conquer)
+void fft(ComplexArray& x) {
+    const size_t n = x.size();
+    if (n <= 1) return;
+
+    // divide
+    ComplexArray even = x[slice(0, n / 2, 2)];
+    ComplexArray odd = x[slice(1, n / 2, 2)];
+
+    // conquer
+    fft(even);
+    fft(odd);
+
+    // combine
+    for (size_t k = 0; k < n / 2; ++k) {
+        Complex t = polar(1.0, -2 * PI * k / n) * odd[k];
+        x[k] = even[k] + t;
+    }
+
+    // for (size_t 
+    for (size_t k = 0; k < n / 2; ++k) {
+        Complex t = polar(1.0, -2 * PI * k / n) * odd[k];
+        x[k + n / 2] = even[k] - t;
+    }
+}
+
+// inverse fft (in-place)
+void ifft(ComplexArray& x) {
+    // conjugate the complex numbers
+    x = x.apply(conj);
+
+    // forward fft
+    fft(x);
+
+    // conjugate the complex numbers again
+    x = x.apply(conj);
+
+    // scale the numbers
+    x /= x.size();
+}
 
 WaveFile convolution(WaveFile input, WaveFile IR) {
     WaveFile output;
@@ -251,11 +307,42 @@ WaveFile convolution(WaveFile input, WaveFile IR) {
     output.arraySize = outputArraySize;
     output.array = new double[outputArraySize];
 
-    for (int n = 0; n < input.arraySize; n++) {
-        for (int t = 0; t < IR.arraySize; t++) {
-            output.array[t + n] += IR.array[t] * input.array[n];
-        }
+    int complexArraySize = upper_power_of_two(outputArraySize);
+    cout << "complex array size: " << complexArraySize << endl;
+
+    ComplexArray inputComplexArray;
+    ComplexArray IRComplexArray;
+    inputComplexArray.resize(complexArraySize, 0);
+    IRComplexArray.resize(complexArraySize, 0);
+
+    for (int t = 0; t < input.arraySize; t++) {
+        inputComplexArray[t] = input.array[t];
     }
+
+    for (int t = 0; t < IR.arraySize; t++) {
+        IRComplexArray[t] = IR.array[t];
+    }
+
+    cout << "complex arrays build" << endl;
+
+    fft(inputComplexArray);
+    fft(IRComplexArray);
+    cout << "complex arrays fft" << endl;
+
+    ComplexArray outputComplexArray;
+    outputComplexArray.resize(complexArraySize, 0);
+
+    cout << "complex arrays multiply start" << endl;
+    outputComplexArray = inputComplexArray * IRComplexArray;
+    cout << "complex arrays multiply end" << endl;
+
+    ifft(outputComplexArray);
+    cout << "output complex array ifft" << endl;
+
+    for (int t = 0; t < outputArraySize; t++) {
+        output.array[t] = outputComplexArray[t].real();
+    }
+    cout << "output complex array to real" << endl;
 
     return output;
 }
