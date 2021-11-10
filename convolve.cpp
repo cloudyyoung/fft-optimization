@@ -19,9 +19,6 @@
 #define BITS_PER_SAMPLE		16 //  Standard sample size in bits
 #define BYTES_PER_SAMPLE	(BITS_PER_SAMPLE / 8) // Standard sample size in bytes
 #define MAX_SHORT_VALUE		32768 // Rescaling factor to convert between 16-bit shorts and doubles between -1 and 1
-#define MONOPHONIC			1
-#define STEREOPHONIC		2
-#define FMT_OFFSET			12 // Offset of the fmt chunk in the WAV header
 
 using namespace std;
 
