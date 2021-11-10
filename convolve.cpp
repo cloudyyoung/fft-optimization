@@ -330,8 +330,10 @@ WaveFile convolution(WaveFile input, WaveFile IR) {
         fft(inputComplexArray);
         
         // FFT IR
+        int IRArrayIndex = r;
         for (int t = 0; t < IR.numberOfSample; t++) {
-            IRComplexArray[t] = IR.array[t * output.channels + r];
+            IRComplexArray[t] = IR.array[IRArrayIndex];
+            IRArrayIndex += output.channels;
         }
         fft(IRComplexArray);
 
@@ -341,8 +343,10 @@ WaveFile convolution(WaveFile input, WaveFile IR) {
         cout << "output complex array ifft" << endl;
 
         // Copy real to output intertwined
+        int outputIndex = r;
         for (int t = 0; t < outputSample; t++) {
-            output.array[t * output.channels + r] = outputComplexArray[t].real();
+            output.array[outputIndex] = outputComplexArray[t].real();
+            outputIndex += output.channels;
         }
         cout << "output complex array to real" << endl << endl;
     }
